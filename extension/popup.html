@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VectorBridge</title>
+  <link rel="stylesheet" href="./popup.css" />
+</head>
+
+<body>
+  <main class="popup-shell">
+    <header class="popup-header">
+      <p class="eyebrow">VectorBridge</p>
+      <h1>Captured copy bridge</h1>
+      <p class="copy">
+        Copy in Excalidraw, then open this popup to convert using your saved target app.
+      </p>
+    </header>
+
+    <section class="card">
+      <div class="field-row">
+        <label for="source-app">Copying from</label>
+        <select id="source-app" disabled></select>
+      </div>
+      <div class="field-row">
+        <label for="target-app">Pasting to</label>
+        <select id="target-app"></select>
+      </div>
+      <div class="button-row">
+        <button id="save-preferences" class="secondary-button" type="button">
+          Save preference
+        </button>
+        <button id="convert-button" class="primary-button" type="button">
+          Convert capture
+        </button>
+      </div>
+    </section>
+
+    <section class="card">
+      <p class="section-label">Clipboard preview</p>
+      <pre id="capture-status" class="output">Waiting for clipboard access.</pre>
+    </section>
+
+    <section class="card">
+      <div class="section-heading">
+        <p class="section-label">Converted payload</p>
+        <button id="copy-result" class="ghost-button" type="button">
+          Copy result
+        </button>
+      </div>
+      <pre id="conversion-output" class="output">No conversion yet.</pre>
+    </section>
+
+    <section class="card">
+      <p class="section-label">Fidelity</p>
+      <pre id="fidelity-output" class="output">No conversion yet.</pre>
+    </section>
+
+    <p id="message" class="message" hidden></p>
+  </main>
+
+  <script type="module" src="./popup.js"></script>
+</body>
+
+</html>

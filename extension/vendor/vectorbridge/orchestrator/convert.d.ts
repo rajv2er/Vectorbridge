@@ -1,0 +1,9 @@
+import type { CanonicalDocument } from "../core/types.js";
+export interface ImportAdapter<TInput> {
+    import(input: TInput): CanonicalDocument;
+}
+export interface ExportAdapter<TOutput> {
+    export(document: CanonicalDocument): TOutput;
+}
+export declare function convert<TInput, TOutput>(input: TInput, importer: ImportAdapter<TInput>, exporter: ExportAdapter<TOutput>): TOutput;
+//# sourceMappingURL=convert.d.ts.map

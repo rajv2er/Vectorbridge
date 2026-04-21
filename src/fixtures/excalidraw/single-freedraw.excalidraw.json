@@ -1,0 +1,50 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "https://excalidraw.com",
+  "elements": [
+    {
+      "id": "stroke-a",
+      "type": "freedraw",
+      "x": 120,
+      "y": 80,
+      "width": 52,
+      "height": 28,
+      "angle": 0,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "roundness": null,
+      "seed": 991122,
+      "version": 14,
+      "versionNonce": 555111,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1712000000000,
+      "link": null,
+      "locked": false,
+      "points": [
+        [0, 0, 0.35],
+        [8, 2, 0.4],
+        [18, 6, 0.48],
+        [31, 13, 0.55],
+        [44, 21, 0.62],
+        [52, 28, 0.58]
+      ],
+      "lastCommittedPoint": [52, 28],
+      "simulatePressure": false,
+      "pressures": [0.35, 0.4, 0.48, 0.55, 0.62, 0.58],
+      "index": "a0"
+    }
+  ],
+  "appState": {
+    "viewBackgroundColor": "#ffffff",
+    "currentItemStrokeColor": "#1e1e1e"
+  },
+  "files": {}
+}

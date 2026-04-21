@@ -1,0 +1,25 @@
+{
+  "name": "vectorbridge",
+  "version": "0.0.1",
+  "description": "Universal ink bridge for OneNote, Excalidraw, and Miro",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "npm run build && node --test tests/*.test.js",
+    "demo": "npm run build && node scripts/serve-demo.mjs",
+    "build:extension": "npm run build && node scripts/prepare-extension.mjs"
+  },
+  "keywords": [
+    "ink",
+    "vector",
+    "conversion"
+  ],
+  "author": "You",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

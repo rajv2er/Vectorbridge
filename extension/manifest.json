@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "VectorBridge Prototype",
+  "version": "0.0.1",
+  "description": "Capture copied Excalidraw payloads and convert them with VectorBridge.",
+  "permissions": ["storage", "clipboardRead"],
+  "action": {
+    "default_title": "VectorBridge",
+    "default_popup": "popup.html"
+  }
+}
