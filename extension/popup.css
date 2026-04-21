@@ -1,0 +1,153 @@
+:root {
+  --bg: #f7f1e4;
+  --panel: #fffaf1;
+  --text: #1d1b17;
+  --muted: #6a6258;
+  --border: rgba(29, 27, 23, 0.12);
+  --primary: #0f766e;
+  --primary-strong: #115e59;
+  --secondary: #e9dfcc;
+  --warning-bg: #fff4eb;
+  --warning-text: #9a3412;
+  --radius: 18px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  width: 420px;
+  min-height: 540px;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top right, rgba(15, 118, 110, 0.12), transparent 32%),
+    linear-gradient(160deg, var(--bg), #eadfca);
+}
+
+.popup-shell {
+  padding: 18px;
+}
+
+.popup-header {
+  margin-bottom: 14px;
+}
+
+.eyebrow,
+.section-label {
+  margin: 0 0 8px;
+  font-size: 0.74rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.popup-header h1 {
+  margin: 0 0 10px;
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.copy {
+  margin: 0;
+  color: var(--muted);
+}
+
+.card {
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(255, 250, 241, 0.94);
+}
+
+.field-row + .field-row {
+  margin-top: 12px;
+}
+
+.field-row label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+select,
+button,
+.output {
+  width: 100%;
+  font: inherit;
+}
+
+select,
+.output {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fffdf8;
+}
+
+select {
+  padding: 10px 12px;
+}
+
+.button-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.full-button {
+  margin-top: 10px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+button {
+  border: 0;
+  border-radius: 999px;
+  padding: 11px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary-button {
+  background: var(--primary);
+  color: white;
+}
+
+.primary-button:hover {
+  background: var(--primary-strong);
+}
+
+.secondary-button,
+.ghost-button {
+  background: var(--secondary);
+  color: var(--text);
+}
+
+.output {
+  min-height: 110px;
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: "SFMono-Regular", "Menlo", monospace;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.message {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
