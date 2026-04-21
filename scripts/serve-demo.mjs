@@ -15,8 +15,12 @@ const contentTypes = {
 
 createServer(async (request, response) => {
   try {
-    const requestPath = request.url === "/" ? "/demo/index.html" : request.url;
-    const safePath = normalize(requestPath).replace(/^(\.\.[/\\])+/, "");
+    if (request.url === "/") {
+      response.writeHead(302, { Location: "/demo/index.html" });
+      response.end();
+      return;
+    }
+    const safePath = normalize(request.url).replace(/^(\.\.[/\\])+/, "");
     const filePath = join(root, safePath);
     const body = await readFile(filePath);
     const contentType = contentTypes[extname(filePath)] ?? "application/octet-stream";
