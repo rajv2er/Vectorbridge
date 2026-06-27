@@ -1,3 +1,4 @@
+import { importExcalidrawScene } from "../adapters/excalidraw/import.js";
 import { importMiroClipboard } from "../adapters/miro/import.js";
 import { exportDocumentToMiroClipboard } from "../adapters/miro/clipboard.js";
 import { exportDocumentToExcalidraw } from "../adapters/excalidraw/export.js";
@@ -41,6 +42,14 @@ export function convertBetweenApps(request) {
 
 function importFromSource(sourceApp, payload, options) {
   switch (sourceApp) {
+    case "excalidraw":
+      return importExcalidrawScene(payload, {
+        documentId: options?.documentId,
+        title: options?.title,
+        pageId: options?.pageId,
+        pageName: options?.pageName,
+      });
+
     case "miro-clipboard":
       return importMiroClipboard(payload, {
         documentId: options?.documentId,
