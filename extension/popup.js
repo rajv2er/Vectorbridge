@@ -71,22 +71,46 @@ async function populateClipboardPreview() {
         "Clipboard preview will appear when you click 'Convert'.";
       return;
     }
-    const text = await navigator.clipboard.readText();
-    if (!text || !text.trim()) {
-      captureStatus.textContent = "Clipboard is empty.";
-      return;
-    }
-    const preview = text.length > 200 ? text.slice(0, 200) + "…" : text;
+
     let isJson = false;
+    let preview = "";
+
+    // 1. Check for Miro data via the fallback
     try {
-      JSON.parse(text);
-      isJson = true;
+      const rawHtml = await readClipboardHtmlFallback();
+      if (rawHtml && extractMiroPayload(rawHtml)) {
+        captureStatus.textContent = JSON.stringify(
+          {
+            ready: true,
+            source: "text/html (Miro)",
+            preview: "Miro clipboard data detected. Set source to Miro and click Convert.",
+          },
+          null,
+          2
+        );
+        return;
+      }
+    } catch (e) {}
+
+    // 2. Check for Excalidraw text/plain
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text && text.trim()) {
+        preview = text.length > 200 ? text.slice(0, 200) + "…" : text;
+        try {
+          JSON.parse(text);
+          isJson = true;
+        } catch {}
+        captureStatus.textContent = JSON.stringify(
+          { ready: true, isJson, preview },
+          null,
+          2
+        );
+        return;
+      }
     } catch {}
-    captureStatus.textContent = JSON.stringify(
-      { ready: true, isJson, preview },
-      null,
-      2
-    );
+
+    captureStatus.textContent = "Clipboard is empty.";
   } catch {
     captureStatus.textContent = "Click 'Convert' to read the clipboard.";
   }
@@ -103,8 +127,22 @@ async function handleConvert() {
   let payload;
   try {
     if (sourceApp === "miro-clipboard") {
-      const snapshot = await readClipboardSnapshot();
-      const encoded = findMiroPayload(snapshot);
+      let encoded = "";
+      
+      // 1. Try execCommand paste fallback (gets raw unsanitized HTML reliably)
+      try {
+        const rawHtml = await readClipboardHtmlFallback();
+        encoded = extractMiroPayload(rawHtml);
+      } catch (e) {
+        console.error("Paste fallback failed:", e);
+      }
+
+      // 2. Try modern async API
+      if (!encoded) {
+        const snapshot = await readClipboardSnapshot();
+        encoded = findMiroPayload(snapshot);
+      }
+      
       if (!encoded) {
         showMessage("No Miro data found in clipboard. Copy something from Miro first.");
         return;
@@ -197,20 +235,39 @@ async function handleConvert() {
 async function handleInspectMiroCopy() {
   hideMessage();
 
-  let snapshot;
+  let encoded = "";
+  let snapshot = null;
+  let fallbackUsed = false;
+  let rawHtml = "";
+
   try {
-    snapshot = await readClipboardSnapshot();
+    rawHtml = await readClipboardHtmlFallback();
+    encoded = extractMiroPayload(rawHtml);
+    if (encoded) {
+      fallbackUsed = true;
+    }
   } catch (err) {
-    showMessage(err instanceof Error ? err.message : "Could not read clipboard.");
-    return;
+    console.error("ExecCommand paste failed:", err);
   }
 
-  const encoded = findMiroPayload(snapshot);
+  if (!encoded) {
+    try {
+      snapshot = await readClipboardSnapshot();
+      encoded = findMiroPayload(snapshot);
+    } catch (err) {
+      if (!rawHtml) {
+        showMessage(err instanceof Error ? err.message : "Could not read clipboard.");
+        return;
+      }
+    }
+  }
+
   if (!encoded) {
     conversionOutput.textContent = JSON.stringify(
       {
         message: "No miro-data-v1 marker found.",
-        clipboard: summarizeClipboardSnapshot(snapshot),
+        rawHtmlPreview: rawHtml ? rawHtml.slice(0, 300) : "No HTML captured",
+        clipboard: snapshot ? summarizeClipboardSnapshot(snapshot) : "(could not read snapshot)",
       },
       null,
       2
@@ -228,6 +285,7 @@ async function handleInspectMiroCopy() {
     conversionOutput.textContent = JSON.stringify(
       {
         summary: { objectCount: objectSummaries.length, objects: objectSummaries },
+        readMethod: fallbackUsed ? "execCommand-paste" : "navigator-clipboard-read",
         decoded,
       },
       null,
@@ -290,7 +348,16 @@ async function readClipboardSnapshot() {
   if (!navigator.clipboard.read) {
     throw new Error("Rich clipboard reads are not supported in this browser.");
   }
-  const items = await navigator.clipboard.read();
+  
+  let items;
+  try {
+    // Chrome 104+ supports unsanitized reads, which prevents it from
+    // stripping out Miro's custom <!-- (miro-data-v1)... --> comments.
+    items = await navigator.clipboard.read({ unsanitized: ['text/html'] });
+  } catch {
+    items = await navigator.clipboard.read();
+  }
+  
   const entries = [];
   for (const item of items) {
     const formats = {};
@@ -382,4 +449,56 @@ function showMessage(text) {
 function hideMessage() {
   message.hidden = true;
   message.textContent = "";
+}
+
+/**
+ * Fallback to read raw, unsanitized HTML using document.execCommand('paste').
+ * In Chrome extensions with clipboardRead permission, this works reliably
+ * and prevents the browser from stripping out custom HTML comments.
+ */
+async function readClipboardHtmlFallback() {
+  return new Promise((resolve, reject) => {
+    const div = document.createElement('div');
+    div.contentEditable = true;
+    div.style.position = 'fixed';
+    div.style.left = '-9999px';
+    document.body.appendChild(div);
+
+    let resolved = false;
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        document.body.removeChild(div);
+        reject(new Error("Paste event timeout"));
+      }
+    }, 150);
+
+    div.addEventListener('paste', (e) => {
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(timeout);
+      e.preventDefault();
+      const html = e.clipboardData?.getData('text/html') || "";
+      document.body.removeChild(div);
+      resolve(html);
+    }, { once: true });
+
+    div.focus();
+    try {
+      const success = document.execCommand('paste');
+      if (!success && !resolved) {
+        resolved = true;
+        clearTimeout(timeout);
+        document.body.removeChild(div);
+        reject(new Error("execCommand('paste') failed"));
+      }
+    } catch (err) {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeout);
+        document.body.removeChild(div);
+        reject(err);
+      }
+    }
+  });
 }

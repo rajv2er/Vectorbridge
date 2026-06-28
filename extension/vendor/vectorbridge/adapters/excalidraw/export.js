@@ -24,9 +24,9 @@ export function exportDocumentToExcalidraw(document, options) {
   for (const el of elements) delete el.__zIndex;
 
   const scene = {
-    type: "excalidraw",
+    type: "excalidraw/clipboard",
     version: 2,
-    source: "vectorbridge",
+    source: "https://excalidraw.com",
     elements,
     appState: {
       viewBackgroundColor: "#ffffff",
@@ -153,7 +153,6 @@ function exportStroke(stroke, fidelity) {
   const relPoints = stroke.points.map((p) => [
     round(p.x - bounds.x),
     round(p.y - bounds.y),
-    p.pressure ?? 0.5,
   ]);
 
   return {
@@ -171,8 +170,9 @@ function exportStroke(stroke, fidelity) {
     strokeStyle: stroke.style.dash ?? "solid",
     roughness: 0,
     opacity: Math.round(stroke.style.opacity * 100),
+    roundness: null,
     points: relPoints,
-    pressures: relPoints.map((p) => p[2]),
+    pressures: stroke.points.map((p) => p.pressure ?? 0.5),
     simulatePressure: false,
     lastCommittedPoint: relPoints[relPoints.length - 1] ?? null,
     seed: randomSeed(),
@@ -213,6 +213,7 @@ function exportLine(line, fidelity) {
     strokeStyle: line.style.dash ?? "solid",
     roughness: 0,
     opacity: Math.round(line.style.opacity * 100),
+    roundness: null,
     points: relPoints,
     lastCommittedPoint: relPoints[relPoints.length - 1] ?? null,
     startBinding: null,
@@ -251,6 +252,7 @@ function exportText(text, fidelity) {
     strokeStyle: "solid",
     roughness: 0,
     opacity: Math.round(text.style.opacity * 100),
+    roundness: null,
     text: text.text,
     fontSize: text.fontSize,
     fontFamily: mapFontFamily(text.fontFamily),
