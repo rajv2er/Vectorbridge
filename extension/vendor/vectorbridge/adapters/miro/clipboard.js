@@ -14,9 +14,8 @@ import { simplifyPath } from "../../core/simplify.js";
 
 const BYTE_SHIFT = 59;
 const MIRO_WIDGET_TYPE = 14;
-const MAX_STROKE_SEGMENTS = 48;
-const STROKE_SIMPLIFY_EPSILON = 6;
-const PAINT_PADDING = 1;
+const MAX_STROKE_SEGMENTS = 96;
+const STROKE_SIMPLIFY_EPSILON = 2;
 
 const CANONICAL_TO_MIRO_SHAPE = {
   rectangle: "3",
@@ -207,6 +206,8 @@ function buildConnectorWidget(line, index) {
         _parent: null,
         style: JSON.stringify({
           lc: parseColorToInt(line.style.color),
+          lw: Math.max(1, roundNumber(line.style.width)),
+          lo: roundNumber(line.style.opacity),
           ls: mapDashToMiroLineStyle(line.style.dash),
           t: 2,
           lt: 0,
@@ -251,64 +252,81 @@ function simplifyStrokeForClipboard(points) {
 }
 
 function buildStrokeWidgets(stroke) {
-  const simplified = simplifyStrokeForClipboard(stroke.points);
+  const points = transformStrokePointsForSegments(stroke);
+  const simplified = simplifyStrokeForClipboard(points);
   if (simplified.length < 2) return [];
-  return [buildPaintWidget(stroke, simplified, 0)];
+  return buildStrokeSegmentWidgets(stroke, simplified);
 }
 
-function buildPaintWidget(stroke, points, index) {
-  const bounds = getPointBounds(points);
-  const width = Math.max(1, bounds.width + PAINT_PADDING * 2);
-  const height = Math.max(1, bounds.height + PAINT_PADDING * 2);
+function transformStrokePointsForSegments(stroke) {
+  const rotation = stroke.transform.rotation ?? 0;
+  if (!rotation) return stroke.points;
+
+  const radians = (rotation * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const cx = stroke.bounds.x + stroke.bounds.width / 2;
+  const cy = stroke.bounds.y + stroke.bounds.height / 2;
+
+  return stroke.points.map((point) => {
+    const dx = point.x - cx;
+    const dy = point.y - cy;
+    return {
+      ...point,
+      x: cx + dx * cos - dy * sin,
+      y: cy + dx * sin + dy * cos,
+    };
+  });
+}
+
+function buildStrokeSegmentWidgets(stroke, points) {
+  const widgets = [];
+  for (let i = 1; i < points.length; i++) {
+    const start = points[i - 1];
+    const end = points[i];
+    if (start.x === end.x && start.y === end.y) continue;
+    widgets.push(buildStrokeSegmentWidget(stroke, start, end, i - 1));
+  }
+  return widgets;
+}
+
+function buildStrokeSegmentWidget(stroke, start, end, index) {
   return {
     widgetData: {
       json: {
-        _position: {
-          offsetPx: {
-            x: roundNumber(bounds.x + bounds.width / 2),
-            y: roundNumber(bounds.y + bounds.height / 2),
-          },
+        points: [],
+        primary: {
+          point: { x: roundNumber(start.x), y: roundNumber(start.y) },
+          positionType: 0,
+          widgetIndex: -1,
         },
-        scale: { scale: 1 },
-        relativeScale: 1,
-        rotation: { rotation: roundNumber(stroke.transform.rotation) },
-        relativeRotation: roundNumber(stroke.transform.rotation),
-        size: {
-          width: roundNumber(width),
-          height: roundNumber(height),
+        secondary: {
+          point: { x: roundNumber(end.x), y: roundNumber(end.y) },
+          positionType: 0,
+          widgetIndex: -1,
         },
+        _position: null,
         _parent: null,
-        points: points.map((point) => ({
-          x: roundNumber(point.x - bounds.x),
-          y: roundNumber(point.y - bounds.y),
-        })),
         style: JSON.stringify({
           lc: parseColorToInt(stroke.style.color),
-          t: 2,
+          lw: Math.max(1, roundNumber(stroke.style.width)),
           lo: roundNumber(stroke.style.opacity),
-          e: roundNumber(Math.max(0.1, stroke.style.width / 11)),
+          ls: 2,
+          t: 2,
+          lt: 0,
+          a_start: 0,
+          a_end: 0,
+          VER: 2,
+          jump: 0,
         }),
+        line: { captions: [] },
       },
-      type: "paint",
+      type: "line",
     },
     type: MIRO_WIDGET_TYPE,
     id: index,
     initialId: generateWidgetId(),
   };
-}
-
-function getPointBounds(points) {
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  for (const point of points) {
-    minX = Math.min(minX, point.x);
-    minY = Math.min(minY, point.y);
-    maxX = Math.max(maxX, point.x);
-    maxY = Math.max(maxY, point.y);
-  }
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
 export function exportDocumentToMiroClipboard(document) {
@@ -358,8 +376,8 @@ function convertObject(object, index, fidelity) {
 
     case "stroke": {
       const issue = {
-        code: "MIRO_CLIPBOARD_STROKE_PAINT",
-        message: "Freehand stroke exported as a native Miro paint widget.",
+        code: "MIRO_CLIPBOARD_STROKE_SEGMENTS",
+        message: "Freehand stroke exported as persistent Miro line segments.",
         level: "approximate",
         objectId: object.id,
       };
