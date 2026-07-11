@@ -14,8 +14,8 @@ import { simplifyPath } from "../../core/simplify.js";
 
 const BYTE_SHIFT = 59;
 const MIRO_WIDGET_TYPE = 14;
-const MAX_STROKE_SEGMENTS = 96;
-const STROKE_SIMPLIFY_EPSILON = 2;
+const MAX_STROKE_SEGMENTS = 8;
+const STROKE_SIMPLIFY_EPSILON = 6;
 
 const CANONICAL_TO_MIRO_SHAPE = {
   rectangle: "3",
