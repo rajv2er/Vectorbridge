@@ -153,14 +153,15 @@ function importShapeWidget(json, id) {
 
 function importPaintWidget(json, id) {
   const pos = json._position?.offsetPx ?? { x: 0, y: 0 };
-  const size = json.size ?? { width: 10, height: 10 };
   const rawPts = json.points ?? [];
   const style = tryParseJson(json.style) ?? {};
 
   if (rawPts.length < 2) return null;
 
-  const originX = pos.x - size.width / 2;
-  const originY = pos.y - size.height / 2;
+  // Paint _position.offsetPx is the TOP-LEFT origin of the points,
+  // NOT the center (unlike shapes). Points are relative to that origin.
+  const originX = pos.x;
+  const originY = pos.y;
 
   const points = rawPts.map((p, i) => ({
     x: originX + (p.x ?? 0),
