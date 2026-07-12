@@ -250,10 +250,11 @@ function mapDashToMiroLineStyle(dash) {
 function buildPaintWidget(stroke, index) {
   const points = transformStrokePoints(stroke);
   const bounds = getPointBounds(points);
-  const cx = bounds.x + bounds.width / 2;
-  const cy = bounds.y + bounds.height / 2;
 
-  // Points are relative to the bounding box top-left corner
+  // Miro renders paint points at: _position.offsetPx + point
+  // So offsetPx must be the TOP-LEFT of the stroke's bounding box,
+  // and points must be relative to that top-left corner.
+  // Using center (like shapes) shifts every point by half the bbox size.
   const relPoints = points.map((p) => ({
     x: roundNumber(p.x - bounds.x),
     y: roundNumber(p.y - bounds.y),
@@ -263,7 +264,7 @@ function buildPaintWidget(stroke, index) {
     widgetData: {
       json: {
         _position: {
-          offsetPx: { x: roundNumber(cx), y: roundNumber(cy) },
+          offsetPx: { x: roundNumber(bounds.x), y: roundNumber(bounds.y) },
           schema: "canvasOffsetPx",
         },
         scale: { scale: 1 },
@@ -463,7 +464,7 @@ function computeWidgetTopLeft(w) {
       maxDX = Math.max(maxDX, pt.x ?? 0);
       maxDY = Math.max(maxDY, pt.y ?? 0);
     }
-    return { x: pos.x - maxDX / 2, y: pos.y - maxDY / 2, width: maxDX, height: maxDY };
+    return { x: pos.x, y: pos.y, width: maxDX, height: maxDY };
   }
 
   // Shape / text
