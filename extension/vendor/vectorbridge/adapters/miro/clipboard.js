@@ -344,34 +344,42 @@ export function exportDocumentToMiroClipboard(document) {
   // Final ordered list
   const widgets = [...shapes, ...lines, ...paints];
 
-  // Normalize positions: shift all widgets so the top-left of the bounding
-  // box starts near (0,0). Miro places pasted widgets relative to the cursor,
-  // so absolute Excalidraw coordinates (e.g. x=4593) would scatter elements.
+  // Normalize positions: Miro's paste handler expects all widget coordinates
+  // to be relative to the GROUP CENTER of the selection. This mirrors how
+  // real Miro copies work — shapes and strokes use offsetPx values that are
+  // negative/positive around a central origin point.
   let minX = Infinity;
   let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
   for (const w of widgets) {
     const box = computeWidgetTopLeft(w);
     if (!box) continue;
     minX = Math.min(minX, box.x);
     minY = Math.min(minY, box.y);
+    maxX = Math.max(maxX, box.x + box.width);
+    maxY = Math.max(maxY, box.y + box.height);
   }
-  for (const w of widgets) {
-    if (minX === Infinity) break;
-    const pos = w.widgetData?.json?._position?.offsetPx;
-    if (pos) {
-      pos.x = roundNumber(pos.x - minX);
-      pos.y = roundNumber(pos.y - minY);
-    }
-    // Lines use absolute primary/secondary endpoint coordinates
-    const primary = w.widgetData?.json?.primary?.point;
-    const secondary = w.widgetData?.json?.secondary?.point;
-    if (primary) {
-      primary.x = roundNumber(primary.x - minX);
-      primary.y = roundNumber(primary.y - minY);
-    }
-    if (secondary) {
-      secondary.x = roundNumber(secondary.x - minX);
-      secondary.y = roundNumber(secondary.y - minY);
+  if (minX !== Infinity) {
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+    for (const w of widgets) {
+      const pos = w.widgetData?.json?._position?.offsetPx;
+      if (pos) {
+        pos.x = roundNumber(pos.x - centerX);
+        pos.y = roundNumber(pos.y - centerY);
+      }
+      // Lines use absolute primary/secondary endpoint coordinates
+      const primary = w.widgetData?.json?.primary?.point;
+      const secondary = w.widgetData?.json?.secondary?.point;
+      if (primary) {
+        primary.x = roundNumber(primary.x - centerX);
+        primary.y = roundNumber(primary.y - centerY);
+      }
+      if (secondary) {
+        secondary.x = roundNumber(secondary.x - centerX);
+        secondary.y = roundNumber(secondary.y - centerY);
+      }
     }
   }
 
