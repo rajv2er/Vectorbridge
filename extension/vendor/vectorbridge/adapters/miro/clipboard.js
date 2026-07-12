@@ -10,12 +10,8 @@ import {
   createEmptyFidelityReport,
   mergeFidelityLevels,
 } from "../../core/fidelity.js";
-import { simplifyPath } from "../../core/simplify.js";
-
 const BYTE_SHIFT = 59;
 const MIRO_WIDGET_TYPE = 14;
-const MAX_STROKE_SEGMENTS = 8;
-const STROKE_SIMPLIFY_EPSILON = 6;
 
 const CANONICAL_TO_MIRO_SHAPE = {
   rectangle: "3",
@@ -25,17 +21,17 @@ const CANONICAL_TO_MIRO_SHAPE = {
   triangle: "5",
 };
 
-function defaultStyle(strokeColor, fillColor, fontSize) {
+function defaultStyle(strokeColor, fillColor, fontSize, strokeWidth) {
   const sc = parseColorToInt(strokeColor);
   const bc = fillColor === "transparent" ? -1 : parseColorToInt(fillColor);
   return JSON.stringify({
-    st: 2,
+    st: 3,
     ss: 2,
     sc,
     bc,
     bo: 1,
     brc: sc,
-    brw: 2,
+    brw: Math.max(1, Math.round(strokeWidth ?? 2)),
     bro: 1,
     brs: 2,
     ffn: "Noto Sans",
@@ -44,13 +40,14 @@ function defaultStyle(strokeColor, fillColor, fontSize) {
     ta: "c",
     tav: "m",
     fs: fontSize,
-    b: null,
+    b: 0,
     i: 0,
-    u: null,
-    s: null,
+    u: 0,
+    s: 0,
     bsc: 1,
     VER: 2.1,
-    hl: null,
+    hl: "",
+    brr: 0,
   });
 }
 
@@ -128,6 +125,8 @@ function generateWidgetId() {
   return id;
 }
 
+// ── Shape widgets ──────────────────────────────────────────────────
+
 function buildShapeWidget(shape, index) {
   const miroShape = CANONICAL_TO_MIRO_SHAPE[shape.shapeType] ?? "r";
   const cx = shape.bounds.x + shape.bounds.width / 2;
@@ -135,7 +134,10 @@ function buildShapeWidget(shape, index) {
   return {
     widgetData: {
       json: {
-        _position: { offsetPx: { x: Math.round(cx), y: Math.round(cy) } },
+        _position: {
+          offsetPx: { x: Math.round(cx), y: Math.round(cy) },
+          schema: "canvasOffsetPx",
+        },
         scale: { scale: 1 },
         relativeScale: 1,
         rotation: { rotation: Math.round(shape.transform.rotation) },
@@ -146,7 +148,7 @@ function buildShapeWidget(shape, index) {
         },
         _parent: null,
         text: shape.label ?? "",
-        style: defaultStyle(shape.style.color, shape.fill.color, 14),
+        style: defaultStyle(shape.style.color, shape.fill.color, 14, shape.style.width),
         shape: miroShape,
       },
       type: "shape",
@@ -157,13 +159,18 @@ function buildShapeWidget(shape, index) {
   };
 }
 
+// ── Text widgets ───────────────────────────────────────────────────
+
 function buildTextWidget(text, index) {
   const cx = text.bounds.x + text.bounds.width / 2;
   const cy = text.bounds.y + text.bounds.height / 2;
   return {
     widgetData: {
       json: {
-        _position: { offsetPx: { x: Math.round(cx), y: Math.round(cy) } },
+        _position: {
+          offsetPx: { x: Math.round(cx), y: Math.round(cy) },
+          schema: "canvasOffsetPx",
+        },
         scale: { scale: 1 },
         relativeScale: 1,
         rotation: { rotation: Math.round(text.transform.rotation) },
@@ -184,6 +191,8 @@ function buildTextWidget(text, index) {
     initialId: generateWidgetId(),
   };
 }
+
+// ── Line / Connector widgets ───────────────────────────────────────
 
 function buildConnectorWidget(line, index) {
   const start = line.points[0];
@@ -232,33 +241,53 @@ function mapDashToMiroLineStyle(dash) {
   return 2;
 }
 
-function simplifyStrokeForClipboard(points) {
-  let epsilon = STROKE_SIMPLIFY_EPSILON;
-  let simplified = simplifyPath(points, epsilon);
-  while (simplified.length - 1 > MAX_STROKE_SEGMENTS && epsilon < 96) {
-    epsilon *= 1.6;
-    simplified = simplifyPath(points, epsilon);
-  }
-  if (simplified.length - 1 <= MAX_STROKE_SEGMENTS) return simplified;
+// ── Paint (freehand stroke) widgets ────────────────────────────────
+//
+// Each Excalidraw freehand stroke maps to ONE native Miro paint widget.
+// NEVER split strokes into line segments — bulk line widgets overwhelm
+// Miro's live paste handler and cause deferred rendering.
 
-  const stride = Math.ceil((simplified.length - 1) / MAX_STROKE_SEGMENTS);
-  const sampled = [];
-  for (let i = 0; i < simplified.length; i += stride) {
-    sampled.push(simplified[i]);
-  }
-  const last = simplified[simplified.length - 1];
-  if (sampled[sampled.length - 1] !== last) sampled.push(last);
-  return sampled;
+function buildPaintWidget(stroke, index) {
+  const points = transformStrokePoints(stroke);
+  const bounds = getPointBounds(points);
+  const cx = bounds.x + bounds.width / 2;
+  const cy = bounds.y + bounds.height / 2;
+
+  // Points are relative to the bounding box top-left corner
+  const relPoints = points.map((p) => ({
+    x: roundNumber(p.x - bounds.x),
+    y: roundNumber(p.y - bounds.y),
+  }));
+
+  return {
+    widgetData: {
+      json: {
+        _position: {
+          offsetPx: { x: roundNumber(cx), y: roundNumber(cy) },
+          schema: "canvasOffsetPx",
+        },
+        scale: { scale: 1 },
+        relativeScale: 1,
+        rotation: { rotation: roundNumber(stroke.transform.rotation ?? 0) },
+        relativeRotation: roundNumber(stroke.transform.rotation ?? 0),
+        _parent: null,
+        points: relPoints,
+        style: JSON.stringify({
+          lc: parseColorToInt(stroke.style.color),
+          t: 2,
+          lo: roundNumber(stroke.style.opacity),
+          e: roundNumber(Math.max(0.1, stroke.style.width / 11)),
+        }),
+      },
+      type: "paint",
+    },
+    type: MIRO_WIDGET_TYPE,
+    id: index,
+    initialId: generateWidgetId(),
+  };
 }
 
-function buildStrokeWidgets(stroke) {
-  const points = transformStrokePointsForSegments(stroke);
-  const simplified = simplifyStrokeForClipboard(points);
-  if (simplified.length < 2) return [];
-  return buildStrokeSegmentWidgets(stroke, simplified);
-}
-
-function transformStrokePointsForSegments(stroke) {
+function transformStrokePoints(stroke) {
   const rotation = stroke.transform.rotation ?? 0;
   if (!rotation) return stroke.points;
 
@@ -268,7 +297,7 @@ function transformStrokePointsForSegments(stroke) {
   const cx = stroke.bounds.x + stroke.bounds.width / 2;
   const cy = stroke.bounds.y + stroke.bounds.height / 2;
 
-  return stroke.points.map((point) => {
+  return simplified.map((point) => {
     const dx = point.x - cx;
     const dy = point.y - cy;
     return {
@@ -279,79 +308,55 @@ function transformStrokePointsForSegments(stroke) {
   });
 }
 
-function buildStrokeSegmentWidgets(stroke, points) {
-  const widgets = [];
-  for (let i = 1; i < points.length; i++) {
-    const start = points[i - 1];
-    const end = points[i];
-    if (start.x === end.x && start.y === end.y) continue;
-    widgets.push(buildStrokeSegmentWidget(stroke, start, end, i - 1));
+function getPointBounds(points) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const point of points) {
+    minX = Math.min(minX, point.x);
+    minY = Math.min(minY, point.y);
+    maxX = Math.max(maxX, point.x);
+    maxY = Math.max(maxY, point.y);
   }
-  return widgets;
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
-function buildStrokeSegmentWidget(stroke, start, end, index) {
-  return {
-    widgetData: {
-      json: {
-        points: [],
-        primary: {
-          point: { x: roundNumber(start.x), y: roundNumber(start.y) },
-          positionType: 0,
-          widgetIndex: -1,
-        },
-        secondary: {
-          point: { x: roundNumber(end.x), y: roundNumber(end.y) },
-          positionType: 0,
-          widgetIndex: -1,
-        },
-        _position: null,
-        _parent: null,
-        style: JSON.stringify({
-          lc: parseColorToInt(stroke.style.color),
-          lw: Math.max(1, roundNumber(stroke.style.width)),
-          lo: roundNumber(stroke.style.opacity),
-          ls: 2,
-          t: 2,
-          lt: 0,
-          a_start: 0,
-          a_end: 0,
-          VER: 2,
-          jump: 0,
-        }),
-        line: { captions: [] },
-      },
-      type: "line",
-    },
-    type: MIRO_WIDGET_TYPE,
-    id: index,
-    initialId: generateWidgetId(),
-  };
-}
+// ── Export ─────────────────────────────────────────────────────────
 
 export function exportDocumentToMiroClipboard(document) {
   const fidelity = createEmptyFidelityReport();
-  const widgets = [];
-  let widgetIndex = 0;
+
+  // Group objects by render priority: shapes/text first, then lines, then paint
+  const shapes = [];
+  const lines = [];
+  const paints = [];
 
   for (const object of Object.values(document.objects)) {
-    const converted = convertObject(object, widgetIndex, fidelity);
-    if (converted) {
-      const arr = Array.isArray(converted) ? converted : [converted];
-      for (const w of arr) {
-        w.id = widgetIndex++;
-        widgets.push(w);
-      }
-    }
+    const result = classifyAndConvert(object, fidelity);
+    if (!result) continue;
+    if (result.category === "shape") shapes.push(result.widget);
+    else if (result.category === "line") lines.push(result.widget);
+    else if (result.category === "paint") paints.push(result.widget);
+  }
+
+  // Final ordered list
+  const widgets = [...shapes, ...lines, ...paints];
+
+  // Reassign sequential id and unique widgetToken AFTER sorting
+  let token = 1;
+  for (let i = 0; i < widgets.length; i++) {
+    widgets[i].id = i;
+    widgets[i].meta = { boardId: "", widgetToken: token++ };
   }
 
   const clipboardJson = {
     isProtected: false,
     boardId: "",
-    data: { objects: widgets },
-    meta: { boardId: "", widgetToken: "lor" },
+    data: { objects: widgets, meta: {} },
     version: 2,
     host: "miro.com",
+    asPortalAmount: 0,
     copierType: "COPY",
   };
 
@@ -360,24 +365,24 @@ export function exportDocumentToMiroClipboard(document) {
   return { html, payload, fidelity, widgetCount: widgets.length };
 }
 
-function convertObject(object, index, fidelity) {
+function classifyAndConvert(object, fidelity) {
   switch (object.kind) {
     case "shape":
       fidelity.objects.push({ objectId: object.id, level: "editable", issues: [] });
-      return buildShapeWidget(object, index);
+      return { category: "shape", widget: buildShapeWidget(object, 0) };
 
     case "text":
       fidelity.objects.push({ objectId: object.id, level: "editable", issues: [] });
-      return buildTextWidget(object, index);
+      return { category: "shape", widget: buildTextWidget(object, 0) };
 
     case "line":
       fidelity.objects.push({ objectId: object.id, level: "editable", issues: [] });
-      return buildConnectorWidget(object, index);
+      return { category: "line", widget: buildConnectorWidget(object, 0) };
 
     case "stroke": {
       const issue = {
-        code: "MIRO_CLIPBOARD_STROKE_SEGMENTS",
-        message: "Freehand stroke exported as persistent Miro line segments.",
+        code: "MIRO_CLIPBOARD_STROKE_PAINT",
+        message: "Freehand stroke exported as a native Miro paint widget.",
         level: "approximate",
         objectId: object.id,
       };
@@ -388,7 +393,7 @@ function convertObject(object, index, fidelity) {
         issues: [issue],
       });
       fidelity.level = mergeFidelityLevels(fidelity.level, "approximate");
-      return buildStrokeWidgets(object);
+      return { category: "paint", widget: buildPaintWidget(object, 0) };
     }
 
     default:
