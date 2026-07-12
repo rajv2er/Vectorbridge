@@ -2,3 +2,6 @@
 *.log
 test-env/
 BUGS
+tests/
+!tests/verify-payload.mjs
+!tests/miro-inspector.html

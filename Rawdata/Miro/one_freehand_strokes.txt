@@ -1,0 +1,233 @@
+
+#RAWHTML
+<meta charset='utf-8'><span data-meta="<--(miro-data-v1)tl2kroutqq+gnq+gn111oZynrqBnXZ2qnK2fhJ9ddV2wk6WRg3N+iHSna3hdZ12fnK+cXXW2XaqdpaCer65ddZa2XbKkn6Kgr3+cr5xddbZdpa6qqV11tl2aq6qupK+kqqlddbZdqqGhrqCvi7NddbZds111a2ddtF11a7hnXa6eo6ConF11XZ6cqbGcroqhoa6gr4uzXbhnXa6enKegXXW2Xa6enKegXXVsuGddraCnnK+ksaCOnpynoF11bGddraqvnK+kqqlddbZdraqvnK+kqqlddWu4Z12toKecr6SxoI2qr5yvpKqpXXVrZ12aq5ytoKmvXXWpsKenZ12rqqSpr65ddZa2XbNddXRuaWxxb2xubHRvb2xva3BvZ120XXVruGe2XbNddXRuaWxxb2xubHRvb2xva3BvZ120XXVubWlxc25vbmxsbGtycHJyb7hntl2zXXV0bWl0bnFscnJscG5tbG5rcmddtF11cm9pbXRub250cXNxcGxzb3K4Z7Zds111dGxpbmxybnFycnFzbnFza3FnXbRddWxubGlvbWtzdG1wa3NvbnFyb7hntl2zXXVzcmlwb3JzcG9vc3FwbG9wcGddtF11bWxtaXRwbXJtbXJua2tvdHByuGe2XbNddXNsaXB0bG10cXFzc3Nrc2xvZ120XXVtdHFpcm9ycHNtbnRyc21rbbhntl2zXXVycGlrcm5sbGxsb3Bub2twdGddtF11bnNuaW9sa2tvcm1xbHFrbXO4Z7Zds111cXNpa3R0a2xxa21ra2xzbGddtF11b3J0aWxwbGtwdG9wbGtrcm64Z7Zds111cWxpcm5tc2trbm5ybHF0b3FwZ120XXVwc2tpcXRra3BtbHRtbXBvb7hntl2zXXVwcWlxbWx0c3JzcGtybXRrcHFnXbRddXFydGlwbnFwbnBvb3FvcW64Z7Zds111cG1pbmtrcnBydGtrdHNrdGddtF11cnJwaXFwb2xxc3B0b3J0a3C4Z7Zds111b3JpdHJ0cG1ydHBsbW10bGddtF11c3JraXRscWxvcG5wbnRzcHC4Z7Zds111b25pcXRvcW5zcW1rbm1wbnBnXbRddXRwcWlta29tcm9rc3F0cWtsuGe2XbNddW50aW9xbXFrc25ybG5ybnJ0Z120XXVsa21zaW1vbG10bHJsbXBxb7hntl2zXXVub2l0bXR0b21rdG5za3B0cGddtF11bGxrbWlsc29wbnR0c2xsbnJuuGe2XbNddW10aW5zcW5vcHNybnNxc3JycmddtF11bGx0b2lscnBzcWxrb29vbHRvuGe2XbNddW1saXB0cW1uc3Fya3NydHJwcmddtF11bG10b2lycG5vcnRtbm1xbXG4Z7Zds111bHBpbnFtbHJrcXRtdGxya3FsZ120XXVsbnNyaW5wbXFydHJuc25zbbhntl2zXXVsbGlsb2trcGxwbWxzbmtscm5nXbRddWxvcm5pa3Jxc3Rwc3Ryb3Jzcbhntl2zXXVzaWtzcm9udHBuc3Ryc21zc2ddtF11bHBwcGlucXNwcnBvbW1sc2txuGe2XbNddW9pbHFtcXBtcmtuc3NxbG1vZ120XXVscW5xaW5vc3Fzc3RycHN0crhntl2zXXVraXFtb250cnRrcHBzbHFvcG5nXbRddWxybWxpdGtvb2xxc2xsbXFxdLhntl2zXXVrZ120XXVsc2tzaWtrbHRwa21ucXFxcLhntl2zXXVrZ120XXVsc3NxaXBra3R0a3FubGxwcrhntl2zXXVrZ120XXVsdHBzaXNwcGxxbXJvc29zb3S4Z7Zds111a2ddtF11bWttcmlrbm5vcXJudGxvbnFyuGe2XbNddWtpcG9wbGt0bXNtcXBscG5yc2ddtF11bWt0b2lwbm9wbHBrb3Fzb3RuuGe2XbNddW5pcW5va3Fsc3Nvbm9x
+
+
+#DECODED JSON
+{
+  "isProtected": false,
+  "boardId": "uXjVH8CM9l0=",
+  "data": {
+    "objects": [
+      {
+        "widgetData": {
+          "json": {
+            "_position": {
+              "offsetPx": {
+                "x": 0,
+                "y": 0
+              },
+              "schema": "canvasOffsetPx"
+            },
+            "scale": {
+              "scale": 1
+            },
+            "relativeScale": 1,
+            "rotation": {
+              "rotation": 0
+            },
+            "relativeRotation": 0,
+            "_parent": null,
+            "points": [
+              {
+                "x": 93.16413194414054,
+                "y": 0
+              },
+              {
+                "x": 93.16413194414054,
+                "y": 32.68343111075774
+              },
+              {
+                "x": 92.93617715321307,
+                "y": 74.29343968651847
+              },
+              {
+                "x": 91.31736776836806,
+                "y": 131.42089250843674
+              },
+              {
+                "x": 87.54785448651455,
+                "y": 212.95272273004957
+              },
+              {
+                "x": 81.59129668880814,
+                "y": 296.7475823978202
+              },
+              {
+                "x": 75.07311114534059,
+                "y": 383.4100472616028
+              },
+              {
+                "x": 68.0990160200181,
+                "y": 479.1510594510073
+              },
+              {
+                "x": 61.732800337169465,
+                "y": 580.6900521922544
+              },
+              {
+                "x": 56.621987850729056,
+                "y": 679.536535446463
+              },
+              {
+                "x": 52.3007579009809,
+                "y": 775.6541685947905
+              },
+              {
+                "x": 47.9795279512291,
+                "y": 870.9161453539855
+              },
+              {
+                "x": 43.69463862032535,
+                "y": 956.2042740869601
+              },
+              {
+                "x": 39.46260837137379,
+                "y": 1028.241291712564
+              },
+              {
+                "x": 34.92994209380595,
+                "y": 1102.1845399811373
+              },
+              {
+                "x": 29.386345873868777,
+                "y": 1194.1758610444194
+              },
+              {
+                "x": 21.596238670879757,
+                "y": 1294.753479232626
+              },
+              {
+                "x": 15.362170692917061,
+                "y": 1387.352679738382
+              },
+              {
+                "x": 11.140051521830173,
+                "y": 1473.0768958974786
+              },
+              {
+                "x": 8.087439538978288,
+                "y": 1555.3685754221806
+              },
+              {
+                "x": 4.162652703886124,
+                "y": 1636.348688975897
+              },
+              {
+                "x": 0.6243979055816453,
+                "y": 1721.9044168112669
+              },
+              {
+                "x": 0,
+                "y": 1808.001950236665
+              },
+              {
+                "x": 0,
+                "y": 1886.500990631157
+              },
+              {
+                "x": 0,
+                "y": 1958.8551627484849
+              },
+              {
+                "x": 0,
+                "y": 2027.0334673914367
+              },
+              {
+                "x": 0.5451092826515378,
+                "y": 2094.5345150468493
+              },
+              {
+                "x": 3.6340618843460106,
+                "y": 2155.1903115892055
+              },
+              {
+                "x": 7.129368678559331,
+                "y": 2200.1998198731417
+              },
+              {
+                "x": 9.977151718840105,
+                "y": 2231.162027127768
+              },
+              {
+                "x": 12.279825476465703,
+                "y": 2250.5447917418205
+              },
+              {
+                "x": 12.686179668988188,
+                "y": 2262.0350346815976
+              },
+              {
+                "x": 13.033067394313548,
+                "y": 2267.8561410817965
+              },
+              {
+                "x": 14.998764504482097,
+                "y": 2270.462754560658
+              },
+              {
+                "x": 16.964461614650645,
+                "y": 2273.621084707418
+              },
+              {
+                "x": 17.311349339974186,
+                "y": 2280.1029296320394
+              },
+              {
+                "x": 17.311349339974186,
+                "y": 2288.6363676750098
+              },
+              {
+                "x": 17.311349339974186,
+                "y": 2296.532193041907
+              },
+              {
+                "x": 17.311349339974186,
+                "y": 2304.4048925604493
+              },
+              {
+                "x": 17.311349339974186,
+                "y": 2311.227017825153
+              },
+              {
+                "x": 17.311349339974186,
+                "y": 2315.2938634429975
+              }
+            ],
+            "style": "{\"lc\":1710618,\"t\":2,\"lo\":1,\"e\":20.297887470382946}"
+          },
+          "type": "paint"
+        },
+        "type": 14,
+        "id": 0,
+        "initialId": "3458764677978370262",
+        "meta": {
+          "boardId": "uXjVH8CM9l0=",
+          "widgetToken": 17
+        }
+      }
+    ],
+    "meta": {}
+  },
+  "version": 2,
+  "host": "miro.com",
+  "asPortalAmount": 0,
+  "copierType": "COPY"
+}
+
+
+
+
+
+#WIDGET SUMMARY
+
+Envelope: version=2, host=miro.com, copierType=COPY
+meta: undefined
+Widget count: 1
+
+Widget 0: type=paint, id=0, initialId=3458764677978370262
+  meta: {"boardId":"uXjVH8CM9l0=","widgetToken":17}
+  points: 41 points
+  size: undefined
+  _position: {"offsetPx":{"x":0,"y":0},"schema":"canvasOffsetPx"}
+  style.e: 20.297887470382946, style.lc: 1710618, style.lo: 1
