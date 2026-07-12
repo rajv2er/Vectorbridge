@@ -343,6 +343,37 @@ export function exportDocumentToMiroClipboard(document) {
   // Final ordered list
   const widgets = [...shapes, ...lines, ...paints];
 
+  // Normalize positions: shift all widgets so the top-left of the bounding
+  // box starts near (0,0). Miro places pasted widgets relative to the cursor,
+  // so absolute Excalidraw coordinates (e.g. x=4593) would scatter elements.
+  let minX = Infinity;
+  let minY = Infinity;
+  for (const w of widgets) {
+    const box = computeWidgetTopLeft(w);
+    if (!box) continue;
+    minX = Math.min(minX, box.x);
+    minY = Math.min(minY, box.y);
+  }
+  for (const w of widgets) {
+    if (minX === Infinity) break;
+    const pos = w.widgetData?.json?._position?.offsetPx;
+    if (pos) {
+      pos.x = roundNumber(pos.x - minX);
+      pos.y = roundNumber(pos.y - minY);
+    }
+    // Lines use absolute primary/secondary endpoint coordinates
+    const primary = w.widgetData?.json?.primary?.point;
+    const secondary = w.widgetData?.json?.secondary?.point;
+    if (primary) {
+      primary.x = roundNumber(primary.x - minX);
+      primary.y = roundNumber(primary.y - minY);
+    }
+    if (secondary) {
+      secondary.x = roundNumber(secondary.x - minX);
+      secondary.y = roundNumber(secondary.y - minY);
+    }
+  }
+
   // Reassign sequential id and unique widgetToken AFTER sorting
   let token = 1;
   for (let i = 0; i < widgets.length; i++) {
@@ -399,6 +430,45 @@ function classifyAndConvert(object, fidelity) {
     default:
       return null;
   }
+}
+
+// Compute the top-left corner of a widget's bounding box in canvas coordinates.
+// Shapes/text: _position.offsetPx is CENTER, subtract half of size.
+// Paint: _position.offsetPx is CENTER, derive half-extents from points array.
+// Lines: _position is null, use primary/secondary endpoints directly.
+function computeWidgetTopLeft(w) {
+  const json = w.widgetData?.json;
+  if (!json) return null;
+  const type = w.widgetData?.type;
+
+  if (type === "line") {
+    const p = json.primary?.point;
+    const s = json.secondary?.point;
+    if (!p || !s) return null;
+    return {
+      x: Math.min(p.x, s.x),
+      y: Math.min(p.y, s.y),
+      width: Math.abs(s.x - p.x),
+      height: Math.abs(s.y - p.y),
+    };
+  }
+
+  const pos = json._position?.offsetPx;
+  if (!pos) return null;
+
+  if (type === "paint") {
+    const pts = json.points ?? [];
+    let maxDX = 0, maxDY = 0;
+    for (const pt of pts) {
+      maxDX = Math.max(maxDX, pt.x ?? 0);
+      maxDY = Math.max(maxDY, pt.y ?? 0);
+    }
+    return { x: pos.x - maxDX / 2, y: pos.y - maxDY / 2, width: maxDX, height: maxDY };
+  }
+
+  // Shape / text
+  const size = json.size ?? { width: 0, height: 0 };
+  return { x: pos.x - size.width / 2, y: pos.y - size.height / 2, width: size.width, height: size.height };
 }
 
 function escapeHtml(text) {
