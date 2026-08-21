@@ -158,14 +158,17 @@ function importPaintWidget(json, id) {
 
   if (rawPts.length < 2) return null;
 
-  // Paint _position.offsetPx is the TOP-LEFT origin of the points,
-  // NOT the center (unlike shapes). Points are relative to that origin.
-  const originX = pos.x;
-  const originY = pos.y;
+  // Miro stores paint points in a local, top-left-relative coordinate system,
+  // but uses offsetPx for the center of their bounding box. Reconstructing
+  // absolute points from the center preserves the placement of every stroke
+  // in a multi-stroke drawing.
+  const localBounds = getBoundsForPoints(rawPts);
+  const localCenterX = localBounds.x + localBounds.width / 2;
+  const localCenterY = localBounds.y + localBounds.height / 2;
 
   const points = rawPts.map((p, i) => ({
-    x: originX + (p.x ?? 0),
-    y: originY + (p.y ?? 0),
+    x: pos.x + (p.x ?? 0) - localCenterX,
+    y: pos.y + (p.y ?? 0) - localCenterY,
     t: i,
   }));
 
