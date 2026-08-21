@@ -218,10 +218,64 @@ const checks = [
     typeof w.meta?.widgetToken === "number"
   )],
   ["Widget tokens are unique", new Set(decoded.data.objects.map((w) => w.meta?.widgetToken)).size === decoded.data.objects.length],
+  ["Stroke coordinates retain their relative positions", strokesRetainRelativePositions(importResult.document, decoded)],
 ];
 
 for (const [name, pass] of checks) {
   console.log(`  ${pass ? "✅" : "❌"} ${name}`);
+}
+
+function strokesRetainRelativePositions(document, payload) {
+  const sourceStrokes = Object.values(document.objects).filter(
+    (object) => object.kind === "stroke"
+  );
+  const paintWidgets = payload.data.objects.filter(
+    (widget) => widget.widgetData?.type === "paint"
+  );
+
+  if (sourceStrokes.length !== paintWidgets.length) return false;
+
+  let translation;
+  for (let i = 0; i < sourceStrokes.length; i++) {
+    const sourcePoints = sourceStrokes[i].points;
+    const miroPoints = absoluteMiroPaintPoints(paintWidgets[i].widgetData.json);
+    if (sourcePoints.length !== miroPoints.length) return false;
+
+    for (let pointIndex = 0; pointIndex < sourcePoints.length; pointIndex++) {
+      const source = sourcePoints[pointIndex];
+      const miro = miroPoints[pointIndex];
+      const currentTranslation = {
+        x: miro.x - source.x,
+        y: miro.y - source.y,
+      };
+      if (!translation) {
+        translation = currentTranslation;
+      } else if (
+        Math.abs(currentTranslation.x - translation.x) > 0.002 ||
+        Math.abs(currentTranslation.y - translation.y) > 0.002
+      ) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function absoluteMiroPaintPoints(json) {
+  const points = json.points ?? [];
+  const bounds = {
+    minX: Math.min(...points.map((point) => point.x ?? 0)),
+    maxX: Math.max(...points.map((point) => point.x ?? 0)),
+    minY: Math.min(...points.map((point) => point.y ?? 0)),
+    maxY: Math.max(...points.map((point) => point.y ?? 0)),
+  };
+  const center = json._position?.offsetPx ?? { x: 0, y: 0 };
+  const localCenterX = (bounds.minX + bounds.maxX) / 2;
+  const localCenterY = (bounds.minY + bounds.maxY) / 2;
+  return points.map((point) => ({
+    x: center.x + (point.x ?? 0) - localCenterX,
+    y: center.y + (point.y ?? 0) - localCenterY,
+  }));
 }
 
 if (checks.every(([, pass]) => pass)) {

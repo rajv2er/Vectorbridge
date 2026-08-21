@@ -250,11 +250,13 @@ function mapDashToMiroLineStyle(dash) {
 function buildPaintWidget(stroke, index) {
   const points = transformStrokePoints(stroke);
   const bounds = getPointBounds(points);
+  const centerX = bounds.x + bounds.width / 2;
+  const centerY = bounds.y + bounds.height / 2;
 
-  // Miro renders paint points at: _position.offsetPx + point
-  // So offsetPx must be the TOP-LEFT of the stroke's bounding box,
-  // and points must be relative to that top-left corner.
-  // Using center (like shapes) shifts every point by half the bbox size.
+  // Miro paint points are relative to the stroke's top-left corner, while
+  // _position.offsetPx identifies the center of that local bounding box.
+  // Keeping those two coordinate systems distinct prevents every stroke from
+  // being displaced by half of its own width and height.
   const relPoints = points.map((p) => ({
     x: roundNumber(p.x - bounds.x),
     y: roundNumber(p.y - bounds.y),
@@ -264,7 +266,7 @@ function buildPaintWidget(stroke, index) {
     widgetData: {
       json: {
         _position: {
-          offsetPx: { x: roundNumber(bounds.x), y: roundNumber(bounds.y) },
+          offsetPx: { x: roundNumber(centerX), y: roundNumber(centerY) },
           schema: "canvasOffsetPx",
         },
         scale: { scale: 1 },
@@ -288,25 +290,12 @@ function buildPaintWidget(stroke, index) {
   };
 }
 
+// Miro's paint widget handles rotation via its own rotation field,
+// so we pass the raw points through without applying rotation here.
+// Applying rotation to the points AND setting the widget rotation
+// would double-rotate the stroke.
 function transformStrokePoints(stroke) {
-  const rotation = stroke.transform.rotation ?? 0;
-  if (!rotation) return stroke.points;
-
-  const radians = (rotation * Math.PI) / 180;
-  const cos = Math.cos(radians);
-  const sin = Math.sin(radians);
-  const cx = stroke.bounds.x + stroke.bounds.width / 2;
-  const cy = stroke.bounds.y + stroke.bounds.height / 2;
-
-  return simplified.map((point) => {
-    const dx = point.x - cx;
-    const dy = point.y - cy;
-    return {
-      ...point,
-      x: cx + dx * cos - dy * sin,
-      y: cy + dx * sin + dy * cos,
-    };
-  });
+  return stroke.points;
 }
 
 function getPointBounds(points) {
@@ -443,7 +432,7 @@ function classifyAndConvert(object, fidelity) {
 
 // Compute the top-left corner of a widget's bounding box in canvas coordinates.
 // Shapes/text: _position.offsetPx is CENTER, subtract half of size.
-// Paint: _position.offsetPx is CENTER, derive half-extents from points array.
+// Paint: _position.offsetPx is the CENTER of the local points bounds.
 // Lines: _position is null, use primary/secondary endpoints directly.
 function computeWidgetTopLeft(w) {
   const json = w.widgetData?.json;
@@ -467,12 +456,23 @@ function computeWidgetTopLeft(w) {
 
   if (type === "paint") {
     const pts = json.points ?? [];
-    let maxDX = 0, maxDY = 0;
+    let minDX = Infinity, minDY = Infinity;
+    let maxDX = -Infinity, maxDY = -Infinity;
     for (const pt of pts) {
+      minDX = Math.min(minDX, pt.x ?? 0);
+      minDY = Math.min(minDY, pt.y ?? 0);
       maxDX = Math.max(maxDX, pt.x ?? 0);
       maxDY = Math.max(maxDY, pt.y ?? 0);
     }
-    return { x: pos.x, y: pos.y, width: maxDX, height: maxDY };
+    if (minDX === Infinity) return { x: pos.x, y: pos.y, width: 0, height: 0 };
+    const width = maxDX - minDX;
+    const height = maxDY - minDY;
+    return {
+      x: pos.x - width / 2,
+      y: pos.y - height / 2,
+      width,
+      height,
+    };
   }
 
   // Shape / text
