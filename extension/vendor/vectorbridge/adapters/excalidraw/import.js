@@ -21,6 +21,12 @@ function isTextElement(element) {
     "text" in element &&
     typeof element.text === "string");
 }
+function isImageElement(element) {
+  return (element.type === "image" &&
+    typeof element.fileId === "string" &&
+    typeof element.width === "number" &&
+    typeof element.height === "number");
+}
 const DEFAULT_TRANSFORM = {
   x: 0,
   y: 0,
@@ -33,7 +39,7 @@ export function importExcalidrawScene(scene, options) {
   const objects = {};
   const pageId = options?.pageId ?? "page-1";
   for (const element of scene.elements) {
-    const result = importElement(element);
+    const result = importElement(element, scene.files ?? {});
     if (result === null) {
       pushIssue(fidelity, {
         code: "EXCALIDRAW_UNSUPPORTED_ELEMENT",
@@ -74,7 +80,7 @@ export function importExcalidrawScene(scene, options) {
   };
   return { document, fidelity };
 }
-function importElement(element) {
+function importElement(element, files) {
   if (isFreedrawElement(element)) {
     return mapFreedrawElement(element);
   }
@@ -87,7 +93,40 @@ function importElement(element) {
   if (isTextElement(element)) {
     return mapTextElement(element);
   }
+  if (isImageElement(element)) {
+    return mapImageElement(element, files);
+  }
   return null;
+}
+function mapImageElement(element, files) {
+  const file = files[element.fileId];
+  if (!file?.dataURL) {
+    return null;
+  }
+  return {
+    id: element.id,
+    kind: "image",
+    dataURL: file.dataURL,
+    mimeType: file.mimeType,
+    transform: {
+      ...DEFAULT_TRANSFORM,
+      scaleX: element.scale?.[0] ?? 1,
+      scaleY: element.scale?.[1] ?? 1,
+      rotation: radiansToDegrees(element.angle ?? 0),
+    },
+    bounds: {
+      x: element.x,
+      y: element.y,
+      width: element.width,
+      height: element.height,
+    },
+    opacity: normalizeOpacity(element.opacity),
+    zIndex: parseElementIndex(element.index),
+    metadata: {
+      sourceApp: "excalidraw",
+      excalidraw: { fileId: element.fileId, crop: element.crop ?? null },
+    },
+  };
 }
 function mapFreedrawElement(element) {
   const points = mapFreedrawPoints(element);

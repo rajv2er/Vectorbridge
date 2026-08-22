@@ -290,6 +290,39 @@ function buildPaintWidget(stroke, index) {
   };
 }
 
+// ── Image widgets ──────────────────────────────────────────────────
+
+function buildImageWidget(image, index) {
+  const centerX = image.bounds.x + image.bounds.width / 2;
+  const centerY = image.bounds.y + image.bounds.height / 2;
+  return {
+    widgetData: {
+      json: {
+        _position: {
+          offsetPx: { x: roundNumber(centerX), y: roundNumber(centerY) },
+          schema: "canvasOffsetPx",
+        },
+        scale: { scale: 1 },
+        relativeScale: 1,
+        rotation: { rotation: roundNumber(image.transform.rotation ?? 0) },
+        relativeRotation: roundNumber(image.transform.rotation ?? 0),
+        size: {
+          width: Math.max(1, roundNumber(image.bounds.width)),
+          height: Math.max(1, roundNumber(image.bounds.height)),
+        },
+        _parent: null,
+        url: image.dataURL,
+        title: "",
+        alt: "",
+      },
+      type: "image",
+    },
+    type: MIRO_WIDGET_TYPE,
+    id: index,
+    initialId: generateWidgetId(),
+  };
+}
+
 // Miro's paint widget handles rotation via its own rotation field,
 // so we pass the raw points through without applying rotation here.
 // Applying rotation to the points AND setting the widget rotation
@@ -321,6 +354,7 @@ export function exportDocumentToMiroClipboard(document) {
   const shapes = [];
   const lines = [];
   const paints = [];
+  const images = [];
 
   for (const object of Object.values(document.objects)) {
     const result = classifyAndConvert(object, fidelity);
@@ -328,10 +362,11 @@ export function exportDocumentToMiroClipboard(document) {
     if (result.category === "shape") shapes.push(result.widget);
     else if (result.category === "line") lines.push(result.widget);
     else if (result.category === "paint") paints.push(result.widget);
+    else if (result.category === "image") images.push(result.widget);
   }
 
   // Final ordered list
-  const widgets = [...shapes, ...lines, ...paints];
+  const widgets = [...images, ...shapes, ...lines, ...paints];
 
   // Normalize positions: Miro's paste handler expects all widget coordinates
   // to be relative to the GROUP CENTER of the selection. This mirrors how
@@ -424,6 +459,10 @@ function classifyAndConvert(object, fidelity) {
       fidelity.level = mergeFidelityLevels(fidelity.level, "approximate");
       return { category: "paint", widget: buildPaintWidget(object, 0) };
     }
+
+    case "image":
+      fidelity.objects.push({ objectId: object.id, level: "editable", issues: [] });
+      return { category: "image", widget: buildImageWidget(object, 0) };
 
     default:
       return null;
